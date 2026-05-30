@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <link rel="icon" href="{{ url_for('static', filename='logo.png') }}" type="image/png">
+    <title>Fake Discount Detector</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+    <div id="loader" class="loader hidden"></div>
+
+    <header class="navbar">
+        <div class="logo">
+            <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo">
+            <h1>Fake Discount Detector</h1>
+        </div>
+    </header>
+
+    <div class="search-box">
+        <form method="POST">
+            <input type="text" name="url" placeholder="Paste Amazon Product URL..." required>
+            <button type="submit">Analyze</button>
+        </form>
+    </div>
+
+    {% if result %}
+    <div class="product-container">
+
+        <!-- LEFT: Product Info -->
+        <div class="product-card">
+            <h2>{{ result.title }}</h2>
+
+            <div class="price-section">
+                <span class="price">₹{{ result.price }}</span>
+                <span class="mrp">₹{{ result.mrp }}</span>
+                <span class="discount">{{ result.discount }}% OFF</span>
+            </div>
+
+            <div class="analysis">
+                <h3>📊 Price Analysis</h3>
+                <p>Lowest: ₹{{ result.lowest }}</p>
+                <p>Average: ₹{{ result.average }}</p>
+                <p>Highest: ₹{{ result.highest }}</p>
+            </div>
+        </div>
+
+        <!-- RIGHT: Result -->
+        <div class="result-card">
+            <h3>Final Verdict</h3>
+            <div class="badge 
+    {% if 'Fake' in result.final %}red
+    {% elif 'Overpriced' in result.final %}yellow
+    {% else %}green{% endif %}">
+                {{ result.final }}
+            </div>
+        </div>
+
+    </div>
+    {% endif %}
+
+    <script>
+        document.querySelector("form").addEventListener("submit", function () {
+            document.getElementById("loader").classList.remove("hidden");
+        });
+    </script>
+
+</body>
+
+</html>
