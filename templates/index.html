@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="{{ url_for('static', filename='logo.png') }}" type="image/png">
+    <title>Fake Discount Detector</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+    <!-- Fullscreen loader shown while a request is analyzed -->
+    <div id="loader" class="loader-overlay hidden">
+        <div class="scan-loader">
+            <div class="scan-ring"></div>
+            <p>Scanning product page&hellip;</p>
+        </div>
+    </div>
+
+    <header class="navbar">
+        <div class="logo-center">
+            <img src="{{ url_for('static', filename='logo.png') }}" alt="Fake Discount Detector logo">
+            <h1>Fake Discount Detector</h1>
+            <span class="tagline">Amazon &amp; Flipkart price-history scanner</span>
+        </div>
+    </header>
+
+    <section class="hero">
+        <h2>Is that "discount" actually a discount?</h2>
+        <p>Paste a product link. We'll pull the live price, compare it against price history, and tell you if the deal is real.</p>
+    </section>
+
+    <div class="search-box">
+        <form method="POST" id="scan-form">
+            <div class="scan-field">
+                <span class="platform-icons" aria-hidden="true">
+                    <!-- magnifier glyph -->
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+                        <circle cx="10.5" cy="10.5" r="6.5"/>
+                        <line x1="15.5" y1="15.5" x2="20.5" y2="20.5"/>
+                    </svg>
+                    <!-- link glyph -->
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9.5 14.5 14.5 9.5"/>
+                        <path d="M11 7.5 13 5.5a3 3 0 0 1 4.24 4.24l-2 2"/>
+                        <path d="M13 16.5 11 18.5a3 3 0 0 1-4.24-4.24l2-2"/>
+                    </svg>
+                </span>
+                <input type="text" name="url" placeholder="Paste an Amazon or Flipkart product URL..." value="{{ request.form.get('url', '') }}" required>
+                <button type="submit">Analyze</button>
+            </div>
+        </form>
+        <div class="supported-row">
+            <span><i class="dot"></i> Amazon</span>
+            <span><i class="dot"></i> Flipkart</span>
+        </div>
+    </div>
+
+    {% if error %}
+    <div class="error-box">{{ error }}</div>
+    {% endif %}
+
+    {% if result %}
+    <div class="product-container">
+
+        <!-- LEFT: Product Info -->
+        <div class="product-card">
+            <span class="platform-tag {{ result.platform }}">
+                {{ result.platform }}
+            </span>
+
+            <div class="product-body">
+                {% if result.image %}
+                <div class="product-image-frame">
+                    <img src="{{ result.image }}" alt="{{ result.title or 'Product image' }}">
+                </div>
+                {% else %}
+                <div class="product-image-frame no-image">No image found</div>
+                {% endif %}
+
+                <div class="product-info">
+                    <h2>{{ result.title or "Untitled product" }}</h2>
+
+                    <div class="price-section">
+                        <span class="price">₹{{ result.price if result.price is not none else "—" }}</span>
+                        <span class="mrp">₹{{ result.mrp if result.mrp is not none else "—" }}</span>
+                        <span class="discount">↙️ {{ result.discount if result.discount is not none else "—" }} % OFF</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="analysis">
+                <h3>📊 Price History</h3>
+                <div class="history-grid">
+                    <div class="history-stat lowest">
+                        <div class="label">Lowest</div>
+                        <div class="value">{{ "₹" + result.lowest|string if result.lowest is not none else "—" }}</div>
+                    </div>
+                    <div class="history-stat average">
+                        <div class="label">Average</div>
+                        <div class="value">{{ "₹" + result.average|string if result.average is not none else "—" }}</div>
+                    </div>
+                    <div class="history-stat highest">
+                        <div class="label">Highest</div>
+                        <div class="value">{{ "₹" + result.highest|string if result.highest is not none else "—" }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT: Result -->
+        <div class="result-card">
+            <h3>Final Verdict</h3>
+
+            {% set tone = 'green' %}
+            {% if 'Fake' in result.final %}{% set tone = 'red' %}
+            {% elif 'Suspicious' in result.final or 'Overpriced' in result.final %}{% set tone = 'yellow' %}
+            {% endif %}
+
+            <div class="verdict-ring {{ tone }}">
+                {% if tone == 'red' %}🚨{% elif tone == 'yellow' %}⚠️{% else %}✅{% endif %}
+            </div>
+
+            <div class="badge {{ tone }}">
+                <span>{{ result.final }}</span>
+            </div>
+
+            <p class="verdict-sub">
+                Based on current price vs. MRP and Buyhatke price history.
+            </p>
+        </div>
+
+    </div>
+    {% endif %}
+
+    <p class="footer-note">Fake Discount Detector — for personal price-checking use only.</p>
+
+    <script>
+        document.getElementById("scan-form").addEventListener("submit", function () {
+            document.getElementById("loader").classList.remove("hidden");
+        });
+    </script>
+
+</body>
+
+</html>
